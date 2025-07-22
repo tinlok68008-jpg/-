@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>匿名留言板</title>
+<style>/*同之前樣式*/</style>
+</head>
+<body>
+<h2>📢 匿名留言板</h2>
+<textarea id="message" placeholder="輸入留言"></textarea>
+<button onclick="send()">送出留言</button>
+<div id="board"></div>
+<script>
+async function load(){
+  const res=await fetch('/api/messages');
+  const data=await res.json();
+  document.getElementById('board').innerHTML='';
+  data.forEach((msg,i)=>{
+    const d=document.createElement('div');
+    d.innerHTML=`<b>#${i+1} ${msg.time}</b><br>${msg.text}<br>
+      <div>${msg.reply?`↳ ${msg.reply}`:`<input placeholder="回覆"> <button onclick="reply(${i},this)">回覆</button>`}</div>`;
+    document.getElementById('board').appendChild(d);
+  });
+}
+async function send(){
+  const text=document.getElementById('message').value.trim();
+  if(!text) return;
+  await fetch('/api/message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+  document.getElementById('message').value='';
+  load();
+}
+async function reply(i,btn){
+  const r=btn.previousElementSibling.value.trim();
+  if(!r) return;
+  await fetch('/api/reply/'+i,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reply:r})});
+  load();
+}
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+const express = require("express");
+const app = express();
+const fs = require("fs");
+const path = require("path");
+
+app.use(express.static("public"));
+app.use(express.json());
+
+const FILE = "data.json";
+if (!fs.existsSync(FILE)) fs.writeFileSync(FILE, "[]");
+
+app.get("/api/messages", (req, res) => {
+  const messages = JSON.parse(fs.readFileSync(FILE));
+  res.json(messages);
+});
+
+app.post("/api/message", (req, res) => {
+  const messages = JSON.parse(fs.readFileSync(FILE));
+  messages.push({ text: req.body.text, reply: null, time: new Date().toLocaleString() });
+  fs.writeFileSync(FILE, JSON.stringify(messages, null, 2));
+  res.sendStatus(200);
+});
+
+app.post("/api/reply/:id", (req, res) => {
+  const messages = JSON.parse(fs.readFileSync(FILE));
+  const id = parseInt(req.params.id);
+  if (messages[id]) {
+    messages[id].reply = req.body.reply;
+    fs.writeFileSync(FILE, JSON.stringify(messages, null, 2));
+  }
+  res.sendStatus(200);
+});
+
+const port = process.env.PORT || 3000;
+app.listen(port, "0.0.0.0", () => console.log(`Server running on port ${port}`));
